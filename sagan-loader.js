@@ -60,19 +60,61 @@
   }
 
   function findNativeAddToCartButton() {
-  const SELECTOR = 'button[data-qa="productsection-btn-addtobag"]';
+  const docs = [];
 
-  try {
-    const nativeButton = window.parent.document.querySelector(SELECTOR);
-    if (nativeButton) return nativeButton;
-  } catch (e) {}
+  try { docs.push(window.parent.document); } catch (e) {}
+  try { docs.push(window.top.document); } catch (e) {}
+  try { docs.push(document); } catch (e) {}
 
-  try {
-    const nativeButton = document.querySelector(SELECTOR);
-    if (nativeButton) return nativeButton;
-  } catch (e) {}
+  const selectors = [
+    'button[data-qa="productsection-btn-addtobag"]',
+    'button[data-qa*="addtobag"]',
+    'button[data-qa*="add-to-cart"]',
+    'button[type="submit"]',
+    'button'
+  ];
+
+  for (const doc of docs) {
+    for (const selector of selectors) {
+      const buttons = Array.from(doc.querySelectorAll(selector));
+
+      for (const button of buttons) {
+        const text = (button.innerText || button.textContent || "").toLowerCase();
+
+        if (
+          text.includes("ajouter au panier") ||
+          text.includes("ajouter") ||
+          text.includes("add to cart")
+        ) {
+          return button;
+        }
+      }
+    }
+  }
 
   return null;
+}
+
+function clickNativeAddToCartButton() {
+  const nativeButton = findNativeAddToCartButton();
+
+  if (!nativeButton) {
+    console.warn("SAGAN : bouton natif Ajouter au panier introuvable.");
+    return;
+  }
+
+  nativeButton.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  setTimeout(function () {
+    nativeButton.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    nativeButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    nativeButton.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    nativeButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    nativeButton.click();
+  }, 250);
 }
 
 function initSaganAddToCart(root) {
@@ -80,24 +122,10 @@ function initSaganAddToCart(root) {
     const fakeButton = event.target.closest(".sagan-carte-button");
     if (!fakeButton) return;
 
-    const nativeButton = findNativeAddToCartButton();
+    event.preventDefault();
+    event.stopPropagation();
 
-    if (nativeButton && !nativeButton.disabled) {
-      nativeButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-      nativeButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-      nativeButton.click();
-      return;
-    }
-
-    if (nativeButton) {
-      nativeButton.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-      });
-      return;
-    }
-
-    console.warn("SAGAN : bouton natif Ajouter au panier introuvable.");
+    clickNativeAddToCartButton();
   });
 }
 
