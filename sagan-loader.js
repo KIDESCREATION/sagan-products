@@ -1,35 +1,37 @@
 (function () {
   const BASE_URL = "https://kidescreation.github.io/sagan-products/";
 
+  function executeSaganScripts(root) {
+    const scripts = root.querySelectorAll("script");
+
+    scripts.forEach(function (oldScript) {
+      const newScript = document.createElement("script");
+
+      Array.from(oldScript.attributes).forEach(function (attr) {
+        newScript.setAttribute(attr.name, attr.value);
+      });
+
+      newScript.textContent = oldScript.textContent;
+      oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
+  }
+
   function getPageSlug() {
-  let pathname = "";
+    let pathname = "";
 
-  try {
-    pathname = window.top.location.pathname;
-  } catch (e) {}
+    try { pathname = window.top.location.pathname; } catch (e) {}
+    if (!pathname || pathname === "/") {
+      try { pathname = window.parent.location.pathname; } catch (e) {}
+    }
+    if (!pathname || pathname === "/") {
+      try { pathname = new URL(document.referrer).pathname; } catch (e) {}
+    }
+    if (!pathname || pathname === "/") {
+      pathname = window.location.pathname;
+    }
 
-  if (!pathname || pathname === "/") {
-    try {
-      pathname = window.parent.location.pathname;
-    } catch (e) {}
+    return pathname.split("/").filter(Boolean).pop().toLowerCase();
   }
-
-  if (!pathname || pathname === "/") {
-    try {
-      pathname = new URL(document.referrer).pathname;
-    } catch (e) {}
-  }
-
-  if (!pathname || pathname === "/") {
-    pathname = window.location.pathname;
-  }
-
-  return pathname
-    .split("/")
-    .filter(Boolean)
-    .pop()
-    .toLowerCase();
-}
 
   async function loadSaganProduct() {
     const root = document.getElementById("sagan-product-root");
@@ -52,7 +54,10 @@
 
       root.innerHTML = product.html || "";
 
-      initSaganAddToCart(root);
+      setTimeout(function () {
+        executeSaganScripts(root);
+        initSaganAddToCart(root);
+      }, 100);
 
     } catch (error) {
       console.error("SAGAN : erreur chargement produit :", error);
@@ -60,74 +65,52 @@
   }
 
   function findNativeAddToCartButton() {
-  const docs = [];
+    const SELECTOR = 'button[data-qa="productsection-btn-addtobag"]';
 
-  try { docs.push(window.parent.document); } catch (e) {}
-  try { docs.push(window.top.document); } catch (e) {}
-  try { docs.push(document); } catch (e) {}
+    try {
+      const nativeButton = window.parent.document.querySelector(SELECTOR);
+      if (nativeButton) return nativeButton;
+    } catch (e) {}
 
-  const selectors = [
-    'button[data-qa="productsection-btn-addtobag"]',
-    'button[data-qa*="addtobag"]',
-    'button[data-qa*="add-to-cart"]',
-    'button[type="submit"]',
-    'button'
-  ];
+    try {
+      const nativeButton = document.querySelector(SELECTOR);
+      if (nativeButton) return nativeButton;
+    } catch (e) {}
 
-  for (const doc of docs) {
-    for (const selector of selectors) {
-      const buttons = Array.from(doc.querySelectorAll(selector));
+    return null;
+  }
 
-      for (const button of buttons) {
-        const text = (button.innerText || button.textContent || "").toLowerCase();
+  function initSaganAddToCart(root) {
+    root.addEventListener("click", function (event) {
+      const fakeButton = event.target.closest(".sagan-carte-button");
+      if (!fakeButton) return;
 
-        if (
-          text.includes("ajouter au panier") ||
-          text.includes("ajouter") ||
-          text.includes("add to cart")
-        ) {
-          return button;
-        }
+      const nativeButton = findNativeAddToCartButton();
+
+      if (nativeButton && !nativeButton.disabled) {
+        nativeButton.click();
+
+        setTimeout(function () {
+          fakeButton.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+          });
+        }, 700);
+
+        return;
       }
-    }
+
+      if (nativeButton) {
+        nativeButton.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+        return;
+      }
+
+      console.warn("SAGAN : bouton natif Ajouter au panier introuvable.");
+    });
   }
-
-  return null;
-}
-
-function clickNativeAddToCartButton() {
-  const nativeButton = findNativeAddToCartButton();
-
-  if (!nativeButton) {
-    console.warn("SAGAN : bouton natif Ajouter au panier introuvable.");
-    return;
-  }
-
-  nativeButton.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-
-  setTimeout(function () {
-    nativeButton.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
-    nativeButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-    nativeButton.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
-    nativeButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-    nativeButton.click();
-  }, 250);
-}
-
-function initSaganAddToCart(root) {
-  root.addEventListener("click", function (event) {
-    const fakeButton = event.target.closest(".sagan-carte-button");
-    if (!fakeButton) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    clickNativeAddToCartButton();
-  });
-}
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", loadSaganProduct);
