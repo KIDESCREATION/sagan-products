@@ -51,10 +51,55 @@
       const product = await productResponse.json();
 
       root.innerHTML = product.html || "";
+
+      initSaganAddToCart(root);
+
     } catch (error) {
       console.error("SAGAN : erreur chargement produit :", error);
     }
   }
+
+  function findNativeAddToCartButton() {
+  const SELECTOR = 'button[data-qa="productsection-btn-addtobag"]';
+
+  try {
+    const nativeButton = window.parent.document.querySelector(SELECTOR);
+    if (nativeButton) return nativeButton;
+  } catch (e) {}
+
+  try {
+    const nativeButton = document.querySelector(SELECTOR);
+    if (nativeButton) return nativeButton;
+  } catch (e) {}
+
+  return null;
+}
+
+function initSaganAddToCart(root) {
+  root.addEventListener("click", function (event) {
+    const fakeButton = event.target.closest(".sagan-carte-button");
+    if (!fakeButton) return;
+
+    const nativeButton = findNativeAddToCartButton();
+
+    if (nativeButton && !nativeButton.disabled) {
+      nativeButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      nativeButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      nativeButton.click();
+      return;
+    }
+
+    if (nativeButton) {
+      nativeButton.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+      return;
+    }
+
+    console.warn("SAGAN : bouton natif Ajouter au panier introuvable.");
+  });
+}
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", loadSaganProduct);
