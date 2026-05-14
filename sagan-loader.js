@@ -1,5 +1,5 @@
 (function () {
-  const BASE_URL = "https://res.cloudinary.com/dohfj2r46/raw/upload/sagan-products/";
+  const BASE_URL = "https://kidescreation.github.io/sagan-products/";
 
   function getPageSlug() {
     return window.location.pathname
