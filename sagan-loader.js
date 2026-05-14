@@ -2,12 +2,32 @@
   const BASE_URL = "https://kidescreation.github.io/sagan-products/";
 
   function getPageSlug() {
-    return window.location.pathname
-      .split("/")
-      .filter(Boolean)
-      .pop()
-      .toLowerCase();
+  const root = document.getElementById("sagan-product-root");
+
+  if (root && root.dataset.slug) {
+    return root.dataset.slug.toLowerCase().trim();
   }
+
+  let pathname = "";
+
+  try {
+    pathname = window.parent.location.pathname;
+  } catch (e) {
+    pathname = window.location.pathname;
+  }
+
+  if (!pathname || pathname === "/") {
+    try {
+      pathname = new URL(document.referrer).pathname;
+    } catch (e) {}
+  }
+
+  return pathname
+    .split("/")
+    .filter(Boolean)
+    .pop()
+    .toLowerCase();
+}
 
   async function loadSaganProduct() {
     const root = document.getElementById("sagan-product-root");
