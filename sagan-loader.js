@@ -2,24 +2,26 @@
   const BASE_URL = "https://kidescreation.github.io/sagan-products/";
 
   function getPageSlug() {
-  const root = document.getElementById("sagan-product-root");
-
-  if (root && root.dataset.slug) {
-    return root.dataset.slug.toLowerCase().trim();
-  }
-
   let pathname = "";
 
   try {
-    pathname = window.parent.location.pathname;
-  } catch (e) {
-    pathname = window.location.pathname;
+    pathname = window.top.location.pathname;
+  } catch (e) {}
+
+  if (!pathname || pathname === "/") {
+    try {
+      pathname = window.parent.location.pathname;
+    } catch (e) {}
   }
 
   if (!pathname || pathname === "/") {
     try {
       pathname = new URL(document.referrer).pathname;
     } catch (e) {}
+  }
+
+  if (!pathname || pathname === "/") {
+    pathname = window.location.pathname;
   }
 
   return pathname
