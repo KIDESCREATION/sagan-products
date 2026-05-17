@@ -40,7 +40,7 @@
     const pageSlug = getPageSlug();
 
     try {
-      const indexResponse = await fetch(BASE_URL + "index.json");
+      const indexResponse = await fetch(BASE_URL + "index.json?v=" + Date.now());
       const index = await indexResponse.json();
 
       const productSlug = Object.keys(index)
@@ -49,7 +49,7 @@
 
       if (!productSlug) return;
 
-      const productResponse = await fetch(BASE_URL + index[productSlug]);
+      const productResponse = await fetch(BASE_URL + index[productSlug] + "?v=" + Date.now());
       const product = await productResponse.json();
 
       root.innerHTML = product.html || "";
